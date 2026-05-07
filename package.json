@@ -1,5 +1,5 @@
 {
-  "name": "chat",
+  "name": "vexosocial",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@tanstack/react-query": "^5.100.8",
+    "@xmtp/browser-sdk": "^7.0.0",
+    "lucide-react": "^1.14.0",
+    "nanoid": "^5.1.11",
     "next": "16.2.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "viem": "^2.48.8",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

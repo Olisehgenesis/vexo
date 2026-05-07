@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# pnpm
+pnpm-lock.yaml
+
+# local XMTP / OPFS data (browser storage, not committed)
+xmtp-*
+
+# OS
+.DS_Store
+Thumbs.db

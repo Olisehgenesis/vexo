@@ -1,8 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Vexo warm light palette */
+  --background:       #FAF7F2;   /* warm white base */
+  --surface:          #FFFDF8;   /* elevated surface */
+  --surface-2:        #F5EFE4;   /* deeper surface / sand */
+  --foreground:       #1F2937;   /* text primary */
+  --foreground-2:     #6B7280;   /* text secondary */
+  --foreground-3:     #9CA3AF;   /* text muted */
+  --border:           #E7E2D8;   /* soft warm border */
+  --border-soft:      #EDE9E0;   /* extra-soft border */
+  --accent:           #16A34A;   /* emerald primary */
+  --accent-light:     #22C55E;   /* emerald light */
+  --accent-subtle:    #DCFCE7;   /* emerald wash */
+  --accent-hover:     #15803D;   /* emerald deep */
+  --cta:              #FACC15;   /* warm yellow CTA */
+  --cta-hover:        #EAB308;
+  --cta-subtle:       #FEF9C3;   /* yellow wash */
+  --sand:             #F5E6C8;   /* sand accent */
+  --tag-green:        #16A34A;
+  --tag-red:          #DC2626;
+  --tag-yellow:       #FACC15;
+  --shadow-warm:      0 1px 3px rgba(120,80,20,0.06), 0 1px 2px rgba(120,80,20,0.04);
+  --shadow-card:      0 2px 8px rgba(120,80,20,0.08), 0 1px 3px rgba(120,80,20,0.05);
+  --shadow-float:     0 4px 16px rgba(120,80,20,0.10), 0 2px 6px rgba(120,80,20,0.06);
 }
 
 @theme inline {
@@ -12,15 +33,56 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Primary CTA button */
+.btn-cta {
+  background: var(--accent);
+  color: #FFFDF8;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: background 0.15s;
+}
+.btn-cta:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.btn-cta:disabled {
+  opacity: 0.5;
+}
+
+/* Yellow accent button */
+.btn-yellow {
+  background: var(--cta);
+  color: #1F2937;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: background 0.15s;
+}
+.btn-yellow:hover:not(:disabled) {
+  background: var(--cta-hover);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--border-soft);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D1C9BC;
+}
+
+/* Smooth transitions across the board */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
