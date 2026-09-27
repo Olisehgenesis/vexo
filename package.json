@@ -21,6 +21,7 @@
     "greek-mythology-data": "^0.2.2",
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
+    "ox": "^1.8.1",
     "permissionless": "^0.2.57",
     "qrcode.react": "^4.2.0",
     "react": "19.2.8",

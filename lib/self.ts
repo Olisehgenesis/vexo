@@ -54,23 +54,3 @@ export function hasSelfReveals(disclosures?: SelfDisclosures) {
 }
 
 export { SelfApiError, SelfWebhooks };
-
-export function selfClient() {
-  const apiKey = process.env.SELF_API_KEY;
-  if (!apiKey) {
-    throw new Error("SELF_API_KEY is not set");
-  }
-  return new SelfClient({ apiKey });
-}
-
-export function selfFlowId() {
-  const id = process.env.SELF_FLOW_ID;
-  if (!id) {
-    throw new Error(
-      "SELF_FLOW_ID is missing. Deploy a Proof of Human flow in the Self dashboard and set it.",
-    );
-  }
-  return id;
-}
-
-export { SelfApiError, SelfWebhooks };
