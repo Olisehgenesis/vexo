@@ -52,8 +52,8 @@ export async function startGoodDollarFace(callbackUrl: string) {
     transport: http("https://forno.celo.org"),
   });
   const sdk = await IdentitySDK.init({
-    publicClient,
-    walletClient,
+    publicClient: publicClient as never,
+    walletClient: walletClient as never,
     env: "production",
   });
   const url = await sdk.generateFVLink(false, callbackUrl, 42220);
