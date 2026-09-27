@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #efe8d6;
+  --panel: #f4eddc;
+  --ink: #1b3022;
+  --violet: #2a7a42;
+  --orchid: #3a8d52;
+  --lilac: #d7e3cc;
+  --line: #1b3022;
+  --blush: #c5d6b4;
+  --mist: #e7dfcc;
+  --menu: #1a3d28;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-violet: var(--violet);
+  --color-orchid: var(--orchid);
+  --color-lilac: var(--lilac);
+  --color-line: var(--line);
+  --color-blush: var(--blush);
+  --color-mist: var(--mist);
+  --color-menu: var(--menu);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mark: var(--font-mark);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--lilac);
+}
+
+.doodle-stroke {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  opacity: 0.5;
+}
+
+.phone-shell {
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+.hero-pass {
+  aspect-ratio: 1.62 / 1;
+  background: var(--panel);
+  border: 1.5px solid var(--ink);
+  transform: rotate(-12deg);
+}
+
+.hatch {
+  background-color: var(--panel);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 5px,
+      color-mix(in oklab, var(--ink) 16%, transparent) 5px,
+      color-mix(in oklab, var(--ink) 16%, transparent) 6px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 5px,
+      color-mix(in oklab, var(--ink) 16%, transparent) 5px,
+      color-mix(in oklab, var(--ink) 16%, transparent) 6px
+    );
+}
+
+.folder-tab {
+  border: 1px solid color-mix(in oklab, var(--ink) 14%, transparent);
+  border-bottom: 0;
+  background: #f8f1e0;
+  padding: 12px 26px 14px;
+  font-size: 13px;
+  color: color-mix(in oklab, var(--ink) 70%, transparent);
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 100%, 0 100%);
+}
+
+.folder-tab[data-active="true"] {
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.btn-fill {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #f6f1e4;
+}
+
+.btn-ghost {
+  background: #f6f1e4;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.btn-menu {
+  height: 40px;
+  padding: 0 14px 0 16px;
+  border-radius: 10px;
+  background: var(--menu);
+  border: 0;
+  color: #f6f1e4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pressable {
+  transition:
+    transform 100ms ease-out,
+    filter 100ms ease-out;
+}
+
+.pressable:active {
+  transform: scale(0.98);
+  filter: brightness(0.96);
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1.5px solid color-mix(in oklab, var(--ink) 22%, transparent);
+  background: #f6f1e4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 4px rgb(42 122 66 / 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

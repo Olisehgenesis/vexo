@@ -1,0 +1,31 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# next
+/.next/
+/out/
+
+# env
+.env*
+!.env.example
+
+# neon
+.neon
+.cursor/mcp.json
+
+# debug
+npm-debug.log*
+
+# os
+.DS_Store
+
+# typescript
+next-env.d.ts
+.neon
