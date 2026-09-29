@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { dicebearUrl, nounLooks } from "@/lib/dicebear";
 import { addCard, currentUser } from "@/lib/store";
@@ -22,10 +22,9 @@ export default function NewCardPage() {
   const [slug, setSlug] = useState("business");
   const [title, setTitle] = useState("");
   const [bio, setBio] = useState("");
+  const looks = useMemo(() => nounLooks(), []);
   const [avatarStyle] = useState<DiceStyle>("noun");
-  const [avatarSeed, setAvatarSeed] = useState(
-    nounLooks(user?.username ?? "vexo")[0] ?? "vexo",
-  );
+  const [avatarSeed, setAvatarSeed] = useState(looks[0] ?? "{}");
 
   if (!user) return null;
 
@@ -85,7 +84,7 @@ export default function NewCardPage() {
           <textarea required rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
         </label>
         <div className="flex gap-2 overflow-x-auto">
-          {nounLooks(user.username).map((look) => (
+          {looks.map((look) => (
             <button
               key={look}
               type="button"

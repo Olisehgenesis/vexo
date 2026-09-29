@@ -79,6 +79,20 @@ export type WalletMint = {
   samsung?: string;
 };
 
+export type PasskeyWallet = {
+  credentialId: string;
+  publicKey: `0x${string}`;
+  publicKeySpki?: string;
+  address: `0x${string}`;
+  kernelAddress?: `0x${string}`;
+  createdAt: string;
+};
+
+export type PasskeyBiodata = {
+  name: string;
+  extra: Record<string, unknown>;
+};
+
 export type PasskeyCardVault = {
   v: 1;
   wallet: PasskeyWallet;
@@ -87,6 +101,7 @@ export type PasskeyCardVault = {
   avatarStyle: DiceStyle;
   avatarSeed: string;
   avatarGender?: VexoCard["avatarGender"];
+  biodata?: PasskeyBiodata;
 };
 
 export type VexoUser = {
@@ -98,6 +113,7 @@ export type VexoUser = {
   vault: EncryptedVault;
   onboardingComplete: boolean;
   passkeyWallet?: PasskeyWallet;
+  passkeyBiodata?: PasskeyBiodata;
   humanity?: {
     self?: SelfProof;
     gooddollar?: GoodDollarProof;

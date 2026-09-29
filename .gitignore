@@ -12,8 +12,12 @@
 /.next/
 /out/
 
-# env
-.env*
+# env — dotenvx: commit encrypted .env and .env.production; never commit keys
+.env.keys
+.env.local
+.env*.local
+!.env
+!.env.production
 !.env.example
 
 # neon

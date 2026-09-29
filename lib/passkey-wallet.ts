@@ -155,6 +155,12 @@ export async function requestPasskeyAssertion(
     vault = await decodeCardVault(ext.largeBlob.blob, prfFirst);
   }
 
+  if (writeVault && ext.largeBlob?.written !== true) {
+    throw new Error(
+      "Saved on this device. The passkey blob was not replaced, so the previous copy on the key is still there.",
+    );
+  }
+
   return { credentialId: credential.id, vault };
 }
 

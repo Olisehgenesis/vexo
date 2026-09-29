@@ -6,6 +6,7 @@ import { VexoCardFace } from "@/components/vexo-card";
 import {
   cardsFor,
   currentUser,
+  passkeyVaultSnapshot,
   primaryCard,
   signOut,
 } from "@/lib/store";
@@ -126,15 +127,8 @@ export default function CardHomePage() {
           setSealBusy(true);
           setSealNote("");
           try {
-            await sealCardToPasskey({
-              v: 1,
-              wallet: user.passkeyWallet,
-              username: user.username,
-              displayName: user.displayName,
-              avatarStyle: card.avatarStyle,
-              avatarSeed: card.avatarSeed,
-              avatarGender: card.avatarGender,
-            });
+            const vault = passkeyVaultSnapshot();
+            if (vault) await sealCardToPasskey(vault);
             setSealNote("Card is on this passkey. Other browsers can sign in with it.");
           } catch (err) {
             setSealNote(
@@ -148,7 +142,7 @@ export default function CardHomePage() {
         }}
         className="btn btn-ghost pressable mt-3 w-full border-dashed"
       >
-        {sealBusy ? "Waiting for passkey…" : "Save card on this passkey"}
+        {sealBusy ? "Waiting for passkey…" : "Write card onto this passkey"}
       </button>
       {sealNote ? (
         <p className="mt-2 text-center text-xs text-ink/55">{sealNote}</p>

@@ -1,4 +1,5 @@
 import { createIdentityVault, hashProof, randomId, slugify } from "./crypto";
+import { normalizeBiodata } from "./passkey-vault";
 import { usernameSlug } from "./username";
 import type {
   AppState,
@@ -7,6 +8,7 @@ import type {
   DiceStyle,
   EncryptedVault,
   GoodDollarProof,
+  PasskeyBiodata,
   PasskeyCardVault,
   PasskeyWallet,
   SelfProof,
@@ -217,13 +219,18 @@ export async function activatePasskeySession(
 }
 
 export async function hydrateFromPasskeyVault(vault: PasskeyCardVault) {
+  const biodata = normalizeBiodata(
+    vault.biodata?.name ?? vault.displayName,
+    vault.biodata?.extra,
+  );
   return completeOnboarding({
     username: vault.username,
-    displayName: vault.displayName,
+    displayName: biodata.name,
     avatarStyle: vault.avatarStyle,
     avatarSeed: vault.avatarSeed,
     avatarGender: vault.avatarGender,
     passkeyWallet: vault.wallet,
+    passkeyBiodata: biodata,
   });
 }
 
@@ -263,6 +270,7 @@ export async function completeOnboarding(input: {
   avatarSeed: string;
   avatarGender?: VexoCard["avatarGender"];
   passkeyWallet: PasskeyWallet;
+  passkeyBiodata?: PasskeyBiodata;
 }) {
   const username = usernameSlug(input.username);
   if (!username) throw new Error("Choose a username");
@@ -299,6 +307,10 @@ export async function completeOnboarding(input: {
     vault,
     onboardingComplete: true,
     passkeyWallet: input.passkeyWallet,
+    passkeyBiodata: normalizeBiodata(
+      input.passkeyBiodata?.name ?? input.displayName,
+      input.passkeyBiodata?.extra,
+    ),
     humanity: {},
     walletMints: {},
   };
@@ -349,6 +361,47 @@ export function updatePrimaryCard(patch: Partial<VexoCard>) {
     ),
   };
   persist();
+}
+
+export function savePasskeyBiodata(name: string, extra: Record<string, unknown> = {}) {
+  const user = currentUser();
+  if (!user) return null;
+  const biodata = normalizeBiodata(name, extra);
+  memory = {
+    ...memory,
+    users: memory.users.map((item) =>
+      item.id === user.id
+        ? { ...item, displayName: biodata.name, passkeyBiodata: biodata }
+        : item,
+    ),
+    cards: memory.cards.map((card) =>
+      card.userId === user.id && card.isPrimary
+        ? { ...card, displayName: biodata.name, updatedAt: new Date().toISOString() }
+        : card,
+    ),
+  };
+  persist();
+  return passkeyVaultSnapshot();
+}
+
+export function passkeyVaultSnapshot(): PasskeyCardVault | null {
+  const user = currentUser();
+  const card = user ? primaryCard(user.id) : null;
+  if (!user?.passkeyWallet || !card) return null;
+  const biodata = normalizeBiodata(
+    user.passkeyBiodata?.name ?? user.displayName,
+    user.passkeyBiodata?.extra,
+  );
+  return {
+    v: 1,
+    wallet: user.passkeyWallet,
+    username: user.username,
+    displayName: biodata.name,
+    avatarStyle: card.avatarStyle,
+    avatarSeed: card.avatarSeed,
+    avatarGender: card.avatarGender,
+    biodata,
+  };
 }
 
 export function addCard(input: {

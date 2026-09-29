@@ -33,14 +33,14 @@ export default function OnboardingPage() {
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState<AvatarGender>("unspecified");
   const [avatarStyle] = useState<DiceStyle>("noun");
-  const [avatarSeed, setAvatarSeed] = useState("vexo·1");
+  const [avatarSeed, setAvatarSeed] = useState("");
   const [username, setUsername] = useState("");
+  const [handleNote, setHandleNote] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const displayName = [firstName, lastName].filter(Boolean).join(" ");
-  const seed = usernameSlug(`${firstName}_${lastName}`) || "vexo";
-  const looks = useMemo(() => nounLooks(seed), [seed]);
+  const looks = useMemo(() => nounLooks(), []);
 
   useEffect(() => {
     prewarmVault();
@@ -51,8 +51,46 @@ export default function OnboardingPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!looks.includes(avatarSeed)) setAvatarSeed(looks[0]);
+    if (!avatarSeed && looks[0]) setAvatarSeed(looks[0]);
   }, [looks, avatarSeed]);
+
+  useEffect(() => {
+    const slug = usernameSlug(username);
+    if (step !== 2 || !slug) {
+      setHandleNote("");
+      return;
+    }
+    if (userByUsername(slug)) {
+      setHandleNote("Taken on this device.");
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/username?u=${encodeURIComponent(slug)}`);
+        const data = (await res.json()) as {
+          available?: boolean;
+          source?: string;
+        };
+        if (cancelled) return;
+        if (data.available === false) {
+          setHandleNote("That username is taken.");
+          return;
+        }
+        if (data.source === "offline") {
+          setHandleNote("Free on this device. Network directory is offline.");
+          return;
+        }
+        setHandleNote("Free.");
+      } catch {
+        if (!cancelled) setHandleNote("Free on this device.");
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [username, step]);
 
   const draft = useMemo<VexoCard>(
     () => ({
@@ -95,6 +133,23 @@ export default function OnboardingPage() {
     setBusy(true);
     setError("");
     try {
+      const slug = usernameSlug(username);
+      if (!slug) throw new Error("Choose a username");
+      if (userByUsername(slug)) throw new Error("That username is taken");
+      const taken = await fetch(`/api/username?u=${encodeURIComponent(slug)}`);
+      const check = (await taken.json()) as { available?: boolean };
+      if (check.available === false) throw new Error("That username is taken");
+      const reserved = await fetch("/api/username", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: slug }),
+      });
+      if (reserved.status === 409) throw new Error("That username is taken");
+      await fetch("/api/nouns", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: slug, seedJson: avatarSeed }),
+      });
       const userId = randomId(16);
       let passkeyWallet = await createPasskeyWallet({
         userId,
@@ -115,6 +170,7 @@ export default function OnboardingPage() {
         avatarSeed,
         avatarGender: gender,
         passkeyWallet,
+        passkeyBiodata: { name: displayName, extra: {} },
       });
       try {
         await sealCardToPasskey({
@@ -125,6 +181,7 @@ export default function OnboardingPage() {
           avatarStyle,
           avatarSeed,
           avatarGender: gender,
+          biodata: { name: displayName, extra: {} },
         });
       } catch {
         // Card still lives in this browser. Seal is how other devices restore it.
@@ -242,7 +299,9 @@ export default function OnboardingPage() {
                 Your Vexo name
               </h1>
               <p className="mt-3 text-sm text-ink/60">
-                We made one from a mood and a god — Greek, Nile, Norse, and more. Shuffle until it feels like you. Next, a passkey is created — fingerprint, face, or PIN. That key is the wallet and the sign-in. No seed, no database.
+                Shuffle until it feels like you. We check if that handle is
+                already taken. Next, a passkey is created — fingerprint, face,
+                or PIN.
               </p>
               <div className="mt-8 flex gap-2">
                 <label className="flex-1 space-y-1 text-sm">
@@ -269,6 +328,9 @@ export default function OnboardingPage() {
               <p className="mt-2 font-[family-name:var(--font-mark)] text-lg text-violet">
                 vexo.social/{usernameSlug(username) || "you"}
               </p>
+              {handleNote ? (
+                <p className="mt-2 text-sm text-ink/55">{handleNote}</p>
+              ) : null}
             </>
           ) : null}
 

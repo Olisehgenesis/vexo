@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Apple, Smartphone, Wallet } from "lucide-react";
 import { VexoCardFace } from "@/components/vexo-card";
+import { WalletPassBack } from "@/components/wallet-pass-back";
 import { GOODDOLLAR_CLAIM, GOODDOLLAR_WALLET } from "@/lib/gooddollar";
 import { startGoodDollarFace } from "@/lib/gooddollar-client";
 import {
@@ -18,6 +19,7 @@ import {
 import { createPasskeyWallet, sealCardToPasskey, shortenAddress, spendAddress } from "@/lib/passkey-wallet";
 import { resolveSmartAccountAddress } from "@/lib/smart-account";
 import { useVexo } from "@/lib/use-vexo";
+import type { WalletPassPayload } from "@/lib/wallet-pass";
 
 export default function MintPassPage() {
   useVexo();
@@ -28,12 +30,38 @@ export default function MintPassPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [address, setAddress] = useState(user?.celoAddress ?? "");
+  const [issuedPass, setIssuedPass] = useState<WalletPassPayload | null>(null);
+  const [passList, setPassList] = useState<WalletPassPayload[]>([]);
+  const [passSource, setPassSource] = useState("");
+  const [lastMessage, setLastMessage] = useState("");
+  const [extraRaw, setExtraRaw] = useState("{}");
 
   const selfOk = user?.humanity?.self?.status === "valid";
   const gdOk = user?.humanity?.gooddollar?.isWhitelisted === true;
   const passReady = canMintPass(user);
   const sessionId = user?.humanity?.self?.sessionId;
   const wallet = user?.passkeyWallet;
+
+  async function refreshPasses() {
+    if (!user) return;
+    try {
+      const res = await fetch(
+        `/api/passes?username=${encodeURIComponent(user.username)}`,
+      );
+      const data = (await res.json()) as {
+        passes?: WalletPassPayload[];
+        source?: string;
+      };
+      setPassList(data.passes ?? []);
+      setPassSource(data.source ?? "");
+    } catch {
+      setPassSource("offline");
+    }
+  }
+
+  useEffect(() => {
+    void refreshPasses();
+  }, [user?.username]);
 
   useEffect(() => {
     if (params.get("self") === "done" && sessionId) {
@@ -108,6 +136,10 @@ export default function MintPassPage() {
             avatarStyle: card?.avatarStyle ?? "noun",
             avatarSeed: card?.avatarSeed ?? me.username,
             avatarGender: card?.avatarGender,
+            biodata: {
+              name: me.passkeyBiodata?.name ?? me.displayName,
+              extra: me.passkeyBiodata?.extra ?? {},
+            },
           });
         }
       } catch {
@@ -195,12 +227,91 @@ export default function MintPassPage() {
     }
   }
 
-  function mint(platform: "apple" | "google" | "samsung") {
+  async function savePassEdits() {
+    if (!issuedPass) return;
+    setBusy("pass-update");
     setError("");
     try {
+      const extra = extraRaw.trim()
+        ? (JSON.parse(extraRaw) as Record<string, unknown>)
+        : {};
+      if (extra && (typeof extra !== "object" || Array.isArray(extra))) {
+        throw new Error("Extra must be a JSON object.");
+      }
+      const res = await fetch(`/api/passes/${encodeURIComponent(issuedPass.serial)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lastMessage, extra }),
+      });
+      const data = (await res.json()) as {
+        pass?: WalletPassPayload;
+        error?: string;
+      };
+      if (!res.ok || !data.pass) throw new Error(data.error ?? "Could not update pass");
+      setIssuedPass(data.pass);
+      void refreshPasses();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update pass");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function revokeIssuedPass() {
+    if (!issuedPass) return;
+    setBusy("pass-update");
+    setError("");
+    try {
+      const res = await fetch(`/api/passes/${encodeURIComponent(issuedPass.serial)}`, {
+        method: "DELETE",
+      });
+      const data = (await res.json()) as {
+        pass?: WalletPassPayload;
+        error?: string;
+      };
+      if (!res.ok || !data.pass) throw new Error(data.error ?? "Could not revoke pass");
+      setIssuedPass(data.pass);
+      void refreshPasses();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not revoke pass");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function mint(platform: "apple" | "google" | "samsung") {
+    if (!user || !card) return;
+    setError("");
+    setBusy(platform);
+    try {
       mintCardToWallet(platform);
+      const res = await fetch("/api/wallet/pass", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          platform,
+          username: user.username,
+          displayName: card.displayName,
+          bio: card.bio,
+          avatarSeed: card.avatarSeed,
+        }),
+      });
+      const data = (await res.json()) as {
+        payload?: WalletPassPayload;
+        error?: string;
+        note?: string;
+      };
+      if (!res.ok || !data.payload) {
+        throw new Error(data.error ?? "Could not issue pass");
+      }
+      setIssuedPass(data.payload);
+      setLastMessage(data.payload.lastMessage);
+      setExtraRaw(JSON.stringify(data.payload.extra ?? {}, null, 2));
+      void refreshPasses();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mint");
+    } finally {
+      setBusy("");
     }
   }
 
@@ -341,32 +452,107 @@ export default function MintPassPage() {
           Add to a wallet
         </h2>
         <p className="mt-2 text-sm text-ink/60">
-          The passkey already is the wallet. Mint puts this card in Apple,
-          Google, or Samsung Wallet.
+          Mint writes the back of the pass — serial, name, Noun seed, terms —
+          then you add it in Apple Wallet, Google Wallet, or Samsung Wallet.
+          A live .pkpass file needs Apple Pass Type ID certs later. The card
+          still works if that file is not signed yet.
         </p>
         <div className="mt-4 grid gap-2">
           <MintButton
             label="Mint card to Apple Wallet"
             icon={<Apple size={16} />}
             done={Boolean(user.walletMints?.apple)}
-            locked={!passReady}
-            onClick={() => mint("apple")}
+            locked={!passReady || Boolean(busy)}
+            onClick={() => void mint("apple")}
           />
           <MintButton
             label="Mint card to Google Wallet"
             icon={<Wallet size={16} />}
             done={Boolean(user.walletMints?.google)}
-            locked={!passReady}
-            onClick={() => mint("google")}
+            locked={!passReady || Boolean(busy)}
+            onClick={() => void mint("google")}
           />
           <MintButton
             label="Mint card to Samsung Pass"
             icon={<Smartphone size={16} />}
             done={Boolean(user.walletMints?.samsung)}
-            locked={!passReady}
-            onClick={() => mint("samsung")}
+            locked={!passReady || Boolean(busy)}
+            onClick={() => void mint("samsung")}
           />
         </div>
+        {passList.length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {passList.map((item) => (
+              <li key={item.serial}>
+                <button
+                  type="button"
+                  className={`w-full border-[3px] border-ink px-3 py-2 text-left text-sm ${
+                    issuedPass?.serial === item.serial ? "bg-violet text-ink" : "bg-mist"
+                  }`}
+                  onClick={() => {
+                    setIssuedPass(item);
+                    setLastMessage(item.lastMessage);
+                    setExtraRaw(JSON.stringify(item.extra ?? {}, null, 2));
+                  }}
+                >
+                  {item.platform} · {item.serial} · {item.status}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-xs text-ink/50">
+            {passSource === "offline"
+              ? "Pass directory is offline. Mint still works on this phone."
+              : "No passes in the directory yet."}
+          </p>
+        )}
+        {issuedPass ? (
+          <div className="mt-6 space-y-3">
+            <WalletPassBack pass={issuedPass} />
+            <label className="block space-y-1 text-sm">
+              Last message
+              <textarea
+                rows={3}
+                value={lastMessage}
+                onChange={(e) => setLastMessage(e.target.value)}
+              />
+            </label>
+            <label className="block space-y-1 text-sm">
+              Extra JSON
+              <textarea
+                rows={5}
+                value={extraRaw}
+                onChange={(e) => setExtraRaw(e.target.value)}
+                spellCheck={false}
+                className="font-mono text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              className="btn btn-fill pressable w-full"
+              disabled={busy === "pass-update"}
+              onClick={() => void savePassEdits()}
+            >
+              {busy === "pass-update" ? "Saving…" : "Update pass"}
+            </button>
+            {issuedPass.status === "active" ? (
+              <button
+                type="button"
+                className="btn btn-ghost pressable w-full"
+                onClick={() => void revokeIssuedPass()}
+              >
+                Revoke pass
+              </button>
+            ) : null}
+            <a
+              href={`/pass/${issuedPass.serial}`}
+              className="block text-center text-xs text-lilac"
+            >
+              Open public pass {issuedPass.serial}
+            </a>
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={() => router.push("/app")}

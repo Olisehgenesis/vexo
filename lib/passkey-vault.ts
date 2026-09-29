@@ -1,6 +1,7 @@
-import type { PasskeyCardVault } from "@/lib/types";
+import type { PasskeyBiodata, PasskeyCardVault } from "@/lib/types";
 
 const PRF_SALT = new TextEncoder().encode("Vexo/card/prf/v1");
+export const MAX_PASSKEY_VAULT_BYTES = 3500;
 
 type AssertionExtensions = {
   largeBlob?: {
@@ -36,11 +37,38 @@ async function aesKeyFromPrf(raw: ArrayBuffer) {
   return crypto.subtle.importKey("raw", material, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
+export function normalizeBiodata(
+  name: string,
+  extra: Record<string, unknown> = {},
+): PasskeyBiodata {
+  const clean =
+    extra && typeof extra === "object" && !Array.isArray(extra) ? extra : {};
+  return {
+    name: name.trim() || "Vexo",
+    extra: clean,
+  };
+}
+
+export function parseExtraJson(raw: string): Record<string, unknown> {
+  const text = raw.trim();
+  if (!text) return {};
+  const value = JSON.parse(text) as unknown;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Extra passkey data must be a small JSON object.");
+  }
+  return value as Record<string, unknown>;
+}
+
 export async function encodeCardVault(
   vault: PasskeyCardVault,
   prfFirst?: ArrayBuffer,
 ) {
   const json = new TextEncoder().encode(JSON.stringify(vault));
+  if (json.byteLength > MAX_PASSKEY_VAULT_BYTES) {
+    throw new Error(
+      "That JSON is too large for the passkey. Keep name plus a small object.",
+    );
+  }
   if (!prfFirst) return json;
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await aesKeyFromPrf(prfFirst);
