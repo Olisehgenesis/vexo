@@ -13,13 +13,13 @@ function parsePayload(raw: string): WalletPassPayload | null {
     const value = JSON.parse(raw) as WalletPassPayload;
     if (!value?.serial) return null;
     return {
-      extra: {},
-      terms: [],
-      status: "active",
-      autoUpdate: true,
-      notifications: true,
-      lockScreen: true,
       ...value,
+      extra: value.extra ?? {},
+      terms: value.terms ?? [],
+      status: value.status ?? "active",
+      autoUpdate: value.autoUpdate ?? true,
+      notifications: value.notifications ?? true,
+      lockScreen: value.lockScreen ?? true,
     };
   } catch {
     return null;
@@ -174,13 +174,6 @@ export async function updatePass(
   const current = await getPass(serial);
   if (!current.pass) {
     return { ok: false as const, source: current.source, error: "Pass not found" };
-  }
-  if (current.source === "offline") {
-    return {
-      ok: true as const,
-      source: "offline" as const,
-      pass: mergePassPatch(current.pass, patch),
-    };
   }
 
   const next = mergePassPatch(current.pass, patch);
