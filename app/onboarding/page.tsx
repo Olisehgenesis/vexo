@@ -13,6 +13,7 @@ import {
 import { usernameSlug, suggestUsername } from "@/lib/username";
 import {
   completeOnboarding,
+  currentUser,
   prewarmVault,
   userByUsername,
 } from "@/lib/store";
@@ -47,6 +48,10 @@ export default function OnboardingPage() {
   useEffect(() => {
     prewarmVault();
   }, []);
+
+  useEffect(() => {
+    if (currentUser()?.passkeyWallet) router.replace("/app");
+  }, [router]);
 
   useEffect(() => {
     if (!portraits.includes(avatarStyle)) setAvatarStyle(portraits[0]);
@@ -94,11 +99,17 @@ export default function OnboardingPage() {
     setError("");
     try {
       const userId = randomId(16);
-      const passkeyWallet = await createPasskeyWallet({
+      let passkeyWallet = await createPasskeyWallet({
         userId,
         username: usernameSlug(username),
         displayName,
       });
+      try {
+        const kernelAddress = await resolveSmartAccountAddress(passkeyWallet);
+        passkeyWallet = { ...passkeyWallet, kernelAddress };
+      } catch {
+        // Address resolves on Send when RPC is available.
+      }
       await completeOnboarding({
         userId,
         displayName,
@@ -219,7 +230,7 @@ export default function OnboardingPage() {
                 Your Vexo name
               </h1>
               <p className="mt-3 text-sm text-ink/60">
-                We made one from a mood and a god — Greek, Nile, Norse, and more. Shuffle until it feels like you. Next, Face ID creates the wallet. No seed.
+                We made one from a mood and a god — Greek, Nile, Norse, and more. Shuffle until it feels like you. Next, Face ID creates the passkey. That key is the wallet and the sign-in. No seed, no database.
               </p>
               <div className="mt-8 flex gap-2">
                 <label className="flex-1 space-y-1 text-sm">
@@ -267,7 +278,7 @@ export default function OnboardingPage() {
               onClick={() => (step === 2 ? finish() : goNext())}
               className="btn btn-fill pressable"
             >
-              {busy ? "Waiting for Face ID…" : step === 2 ? "Create passkey wallet" : "Continue"}
+              {busy ? "Waiting for Face ID…" : step === 2 ? "Create passkey · Face ID" : "Continue"}
             </button>
           </div>
         </div>

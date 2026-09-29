@@ -1,20 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowRight, Menu } from "lucide-react";
+import { ArrowDown, ArrowRight, Fingerprint, Menu } from "lucide-react";
 import { BrickMark, SiteDoodle } from "@/components/doodle-field";
 import { MeetOrbit } from "@/components/meet-orbit";
-import { useIdentity } from "@/lib/identity";
+import { passkeyErrorMessage, signInWithDevicePasskey } from "@/lib/passkey-auth";
 import { currentUser } from "@/lib/store";
+import { useVexo } from "@/lib/use-vexo";
 
 export default function HomePage() {
+  useVexo();
   const router = useRouter();
-  const identity = useIdentity();
+  const user = currentUser();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  async function enter() {
-    await identity.login();
-    if (currentUser()) router.push("/app");
-    else router.push("/onboarding");
+  async function signIn() {
+    setBusy(true);
+    setError("");
+    try {
+      await signInWithDevicePasskey();
+      router.push("/app");
+    } catch (err) {
+      setError(passkeyErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -45,10 +57,10 @@ export default function HomePage() {
           </nav>
           <button
             type="button"
-            onClick={enter}
+            onClick={() => (user ? router.push("/app") : void signIn())}
             className="btn btn-menu pressable mb-2"
           >
-            Menu
+            {user ? "Card" : "Sign in"}
             <Menu size={15} strokeWidth={2.4} />
           </button>
         </header>
@@ -65,21 +77,43 @@ export default function HomePage() {
             Proof of pass.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-ink/70 md:text-base">
-            Only real humans. We do not store your data. Your profile, keys, and
-            pass live on this device. Mint it into Apple Wallet, Google Wallet,
-            or Samsung Pass — then tap a site or a terminal.
+            Only real humans. Sign in with the same Face ID passkey that owns
+            the card in Apple Wallet, Google Wallet, or Samsung Pass. The ETH
+            address is derived from that key. We do not keep an account
+            database.
           </p>
+          {error ? (
+            <p className="mx-auto mt-4 max-w-md text-sm text-rose-700">{error}</p>
+          ) : null}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={enter}
-              className="btn btn-fill pressable"
-            >
-              Create your card
-            </button>
-            <a href="#human" className="btn btn-ghost pressable">
-              How we know you are human
-            </a>
+            {user ? (
+              <button
+                type="button"
+                onClick={() => router.push("/app")}
+                className="btn btn-fill pressable"
+              >
+                Open your card
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void signIn()}
+                  className="btn btn-fill pressable"
+                >
+                  <Fingerprint size={16} />
+                  {busy ? "Waiting for Face ID…" : "Sign in with passkey"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/onboarding")}
+                  className="btn btn-ghost pressable"
+                >
+                  Create your card
+                </button>
+              </>
+            )}
           </div>
         </section>
 
@@ -138,8 +172,9 @@ export default function HomePage() {
           One pass. Your profile.
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-ink/65">
-          After the card is created, mint it to a wallet. It can open a website,
-          a physical terminal, and hold ETH and USD — still on your device.
+            After the card is created, mint it to a wallet. The passkey in
+            Face ID is the same key that unlocks Apple, Google, or Samsung
+            Wallet — and the same key that signs ETH.
         </p>
       </section>
 
@@ -156,16 +191,20 @@ export default function HomePage() {
               We do not store your data.
             </h2>
             <p className="mt-4 max-w-lg text-sm leading-6 text-ink/60">
-              Verify with Self, GoodDollar, or both. Self unlocks the pass.
-              GoodDollar unlocks UBI and gas. Chat is later.
+              Sign in is Face ID on your passkey. The Kernel address is computed
+              from that key. The living card lives on the device and in the
+              wallet app. Verify with Self, GoodDollar, or both when you want
+              the pass filled and UBI.
             </p>
           </div>
           <button
             type="button"
-            onClick={enter}
+            onClick={() =>
+              user ? router.push("/app") : router.push("/onboarding")
+            }
             className="btn btn-fill pressable mt-10 self-start"
           >
-            Create your card
+            {user ? "Open your card" : "Create your card"}
           </button>
         </article>
       </section>

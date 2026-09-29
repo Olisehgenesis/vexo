@@ -182,6 +182,33 @@ export function currentUser() {
   return memory.users.find((u) => u.id === memory.currentUserId) ?? null;
 }
 
+export function knownPasskeyIds() {
+  return memory.users
+    .map((user) => user.passkeyWallet?.credentialId)
+    .filter((id): id is string => Boolean(id));
+}
+
+export function userByCredentialId(credentialId: string) {
+  const needle = credentialId.replace(/=+$/, "");
+  return (
+    memory.users.find(
+      (user) => user.passkeyWallet?.credentialId.replace(/=+$/, "") === needle,
+    ) ?? null
+  );
+}
+
+export function activatePasskeySession(credentialId: string) {
+  const user = userByCredentialId(credentialId);
+  if (!user?.passkeyWallet) {
+    throw new Error(
+      "Face ID found a passkey, but this browser has no card cache. Create the card on this device, or open Vexo on the phone that minted it. We do not keep accounts on a server.",
+    );
+  }
+  memory = { ...memory, currentUserId: user.id };
+  persist();
+  return user;
+}
+
 export function cardsFor(userId: string) {
   return memory.cards.filter((c) => c.userId === userId);
 }
@@ -221,6 +248,15 @@ export async function completeOnboarding(input: {
 }) {
   const username = usernameSlug(input.username);
   if (!username) throw new Error("Choose a username");
+
+  const existing = userByCredentialId(input.passkeyWallet.credentialId);
+  if (existing) {
+    memory = { ...memory, currentUserId: existing.id };
+    persist();
+    bindPasskeyWallet(input.passkeyWallet);
+    return existing;
+  }
+
   if (memory.users.some((u) => u.username === username && u.id !== memory.currentUserId)) {
     throw new Error("That username is taken");
   }

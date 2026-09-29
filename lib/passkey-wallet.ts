@@ -48,17 +48,31 @@ export function credentialFromWallet(wallet: PasskeyWallet) {
   return { id: wallet.credentialId, publicKey };
 }
 
+function assertWebAuthn() {
+  if (typeof window === "undefined" || !window.PublicKeyCredential) {
+    throw new Error("This browser cannot use a passkey.");
+  }
+}
+
 export async function createPasskeyWallet(input: {
   userId: string;
   username: string;
   displayName: string;
 }): Promise<PasskeyWallet> {
-  if (typeof window === "undefined" || !window.PublicKeyCredential) {
-    throw new Error("This browser cannot create a passkey wallet.");
-  }
+  assertWebAuthn();
 
   const credential = await createWebAuthnCredential({
     name: `${input.displayName || input.username} · Vexo`,
+    authenticatorSelection: {
+      authenticatorAttachment: "platform",
+      residentKey: "required",
+      requireResidentKey: true,
+      userVerification: "required",
+    },
+    rp: {
+      id: window.location.hostname,
+      name: "Vexo",
+    },
   });
 
   return {
@@ -67,4 +81,43 @@ export async function createPasskeyWallet(input: {
     address: addressFromPublicKey(credential.publicKey),
     createdAt: new Date().toISOString(),
   };
+}
+
+export async function requestPasskeyAssertion(knownIds: string[] = []) {
+  assertWebAuthn();
+
+  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const allowCredentials = knownIds
+    .map((id) => {
+      try {
+        const bytes = fromB64url(id);
+        return {
+          type: "public-key" as const,
+          id: bytes.buffer.slice(
+            bytes.byteOffset,
+            bytes.byteOffset + bytes.byteLength,
+          ) as ArrayBuffer,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((item): item is { type: "public-key"; id: ArrayBuffer } => Boolean(item));
+
+  const credential = (await navigator.credentials.get({
+    publicKey: {
+      challenge,
+      rpId: window.location.hostname,
+      userVerification: "required",
+      timeout: 120_000,
+      ...(allowCredentials.length > 0 ? { allowCredentials } : {}),
+    },
+    mediation: "required",
+  })) as PublicKeyCredential | null;
+
+  if (!credential) {
+    throw new Error("No passkey was selected.");
+  }
+
+  return { credentialId: credential.id };
 }

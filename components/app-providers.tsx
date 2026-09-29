@@ -32,11 +32,12 @@ function LocalBridge({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       ready,
-      authenticated: Boolean(getState().wrappingKeyHint || getState().currentUserId),
+      authenticated: Boolean(getState().currentUserId),
       subject: getState().currentUserId,
       mode: "local" as const,
       login: async () => {
-        await signInLocal();
+        const { signInWithDevicePasskey } = await import("@/lib/passkey-auth");
+        await signInWithDevicePasskey();
         setTick((n) => n + 1);
       },
       logout: async () => {
@@ -72,9 +73,7 @@ function PrivyBridge({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       ready: ready && privy.ready,
-      authenticated: Boolean(
-        privy.authenticated || getState().wrappingKeyHint || getState().currentUserId,
-      ),
+      authenticated: Boolean(privy.authenticated || getState().currentUserId),
       subject: getState().currentUserId,
       mode: "privy" as const,
       login: async () => {
