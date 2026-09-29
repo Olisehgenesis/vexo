@@ -94,7 +94,7 @@ export function PublicCardView({
             <li key={link.id}>
               <a
                 href={link.url}
-                className="block rounded-2xl bg-white/80 px-4 py-3 text-sm"
+                className="block border-[3px] border-ink bg-mist px-4 py-3 text-sm"
               >
                 {link.label}
               </a>
@@ -110,7 +110,7 @@ export function PublicCardView({
             This is your card
           </Link>
         ) : already ? (
-          <div className="mt-6 rounded-3xl bg-white/80 p-4">
+          <div className="mt-6 border-[3px] border-ink bg-mist p-4">
             <p className="font-[family-name:var(--font-mark)] text-xl text-orchid">
               Proof of Meet ✓
             </p>
@@ -134,7 +134,7 @@ export function PublicCardView({
             <img
               src={dicebearUrl(card.avatarStyle, card.avatarSeed, 40)}
               alt=""
-              className="h-6 w-6 rounded-full"
+              className="h-6 w-6"
             />
             {busy ? "Minting…" : "Mint Proof of Meet"}
           </button>

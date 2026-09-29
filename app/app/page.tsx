@@ -9,7 +9,7 @@ import {
   primaryCard,
   signOut,
 } from "@/lib/store";
-import { shortenAddress, spendAddress } from "@/lib/passkey-wallet";
+import { sealCardToPasskey, shortenAddress, spendAddress } from "@/lib/passkey-wallet";
 import { useVexo } from "@/lib/use-vexo";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,8 @@ export default function CardHomePage() {
   const extras = user ? cardsFor(user.id).filter((c) => !c.isPrimary) : [];
   const [flipped, setFlipped] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sealBusy, setSealBusy] = useState(false);
+  const [sealNote, setSealNote] = useState("");
 
   if (!user || !card) return null;
 
@@ -116,6 +118,42 @@ export default function CardHomePage() {
         </button>
       </div>
 
+      <button
+        type="button"
+        disabled={sealBusy || !user.passkeyWallet}
+        onClick={async () => {
+          if (!user.passkeyWallet) return;
+          setSealBusy(true);
+          setSealNote("");
+          try {
+            await sealCardToPasskey({
+              v: 1,
+              wallet: user.passkeyWallet,
+              username: user.username,
+              displayName: user.displayName,
+              avatarStyle: card.avatarStyle,
+              avatarSeed: card.avatarSeed,
+              avatarGender: card.avatarGender,
+            });
+            setSealNote("Card is on this passkey. Other browsers can sign in with it.");
+          } catch (err) {
+            setSealNote(
+              err instanceof Error
+                ? err.message
+                : "This device could not seal the card onto the key.",
+            );
+          } finally {
+            setSealBusy(false);
+          }
+        }}
+        className="btn btn-ghost pressable mt-3 w-full border-dashed"
+      >
+        {sealBusy ? "Waiting for passkey…" : "Save card on this passkey"}
+      </button>
+      {sealNote ? (
+        <p className="mt-2 text-center text-xs text-ink/55">{sealNote}</p>
+      ) : null}
+
       <Link
         href="/app/edit"
         className="btn btn-ghost pressable mt-3 w-full border-dashed"
@@ -131,7 +169,7 @@ export default function CardHomePage() {
           </Link>
         </div>
         {extras.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-violet/30 bg-white/70 p-4 text-sm text-ink/60">
+          <p className="border-[3px] border-dashed border-ink bg-mist p-4 text-sm text-ink/60">
             One identity, many cards. Add a business, creator, or event card
             when you need a different surface.
           </p>
@@ -140,7 +178,7 @@ export default function CardHomePage() {
             {extras.map((item) => (
               <li
                 key={item.id}
-                className="rounded-2xl bg-white/80 px-4 py-3 text-sm"
+                className="border-[3px] border-ink bg-mist px-4 py-3 text-sm"
               >
                 <p className="font-medium">{item.displayName}</p>
                 <p className="text-xs text-ink/50">

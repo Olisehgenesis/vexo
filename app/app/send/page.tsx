@@ -71,7 +71,7 @@ export default function SendPage() {
           Send
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-2xl">
-          Face ID first
+          Passkey first
         </h1>
         <p className="mt-3 text-sm leading-6 text-ink/65">
           This pass spends from a Kernel smart account. Bind a passkey on the
@@ -90,14 +90,14 @@ export default function SendPage() {
         Send ETH
       </p>
       <h1 className="font-[family-name:var(--font-display)] text-2xl">
-        UserOp, Face ID
+        UserOp, passkey
       </h1>
       <p className="mt-3 text-sm leading-6 text-ink/65">
         The passkey authorizes an ERC-4337 UserOp on Base. There is no seed.
-        Face ID signs. A bundler posts it.
+        The passkey signs. A bundler posts it.
       </p>
 
-      <p className="mt-5 rounded-2xl border border-ink/10 bg-white/70 px-4 py-3 font-mono text-xs leading-5 break-all">
+      <p className="mt-5 border-[3px] border-ink bg-mist px-4 py-3 font-mono text-xs leading-5 break-all">
         {account ? shortenAddress(account) : "Resolving Kernel…"}
         {account ? (
           <span className="mt-1 block text-[10px] uppercase tracking-[0.16em] text-ink/40">
@@ -107,9 +107,9 @@ export default function SendPage() {
       </p>
 
       {!hasBundler() ? (
-        <p className="mt-3 rounded-2xl border border-dashed border-violet/35 bg-white/70 px-4 py-3 text-sm text-ink/65">
-          Set <code>NEXT_PUBLIC_PIMLICO_API_KEY</code> to broadcast. Face ID
-          still runs when you send.
+        <p className="mt-3 border-[3px] border-dashed border-ink bg-mist px-4 py-3 text-sm text-ink/65">
+          Set <code>NEXT_PUBLIC_PIMLICO_API_KEY</code> to broadcast. The passkey
+          still signs when you send.
         </p>
       ) : null}
 
@@ -120,7 +120,7 @@ export default function SendPage() {
           onChange={(e) => setTo(e.target.value)}
           placeholder="0x…"
           autoComplete="off"
-          className="mt-2 w-full rounded-2xl border border-ink/15 bg-white/80 px-4 py-3 font-mono text-sm outline-none focus:border-violet"
+          className="mt-2"
         />
       </label>
 
@@ -131,7 +131,7 @@ export default function SendPage() {
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.001"
           inputMode="decimal"
-          className="mt-2 w-full rounded-2xl border border-ink/15 bg-white/80 px-4 py-3 font-mono text-sm outline-none focus:border-violet"
+          className="mt-2"
         />
       </label>
 
@@ -157,7 +157,7 @@ export default function SendPage() {
         className="btn btn-fill pressable mt-6 w-full"
       >
         <Fingerprint size={18} />
-        {busy ? "Waiting for Face ID…" : "Sign with Face ID"}
+        {busy ? "Waiting for passkey…" : "Sign with passkey"}
       </button>
     </main>
   );

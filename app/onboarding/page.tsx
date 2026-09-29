@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import { Dices } from "lucide-react";
 import { SiteDoodle } from "@/components/doodle-field";
 import { VexoCardFace } from "@/components/vexo-card";
-import {
-  dicebearUrl,
-  stylesForGender,
-  type AvatarGender,
-} from "@/lib/dicebear";
+import { dicebearUrl, nounLooks, type AvatarGender } from "@/lib/dicebear";
 import { usernameSlug, suggestUsername } from "@/lib/username";
 import {
   completeOnboarding,
@@ -17,7 +13,7 @@ import {
   prewarmVault,
   userByUsername,
 } from "@/lib/store";
-import { createPasskeyWallet } from "@/lib/passkey-wallet";
+import { createPasskeyWallet, sealCardToPasskey } from "@/lib/passkey-wallet";
 import { resolveSmartAccountAddress } from "@/lib/smart-account";
 import { randomId } from "@/lib/crypto";
 import type { DiceStyle, VexoCard } from "@/lib/types";
@@ -36,14 +32,15 @@ export default function OnboardingPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState<AvatarGender>("unspecified");
-  const [avatarStyle, setAvatarStyle] = useState<DiceStyle>("adventurer");
+  const [avatarStyle] = useState<DiceStyle>("noun");
+  const [avatarSeed, setAvatarSeed] = useState("vexo·1");
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const displayName = [firstName, lastName].filter(Boolean).join(" ");
   const seed = usernameSlug(`${firstName}_${lastName}`) || "vexo";
-  const portraits = stylesForGender(gender);
+  const looks = useMemo(() => nounLooks(seed), [seed]);
 
   useEffect(() => {
     prewarmVault();
@@ -54,8 +51,8 @@ export default function OnboardingPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!portraits.includes(avatarStyle)) setAvatarStyle(portraits[0]);
-  }, [gender, portraits, avatarStyle]);
+    if (!looks.includes(avatarSeed)) setAvatarSeed(looks[0]);
+  }, [looks, avatarSeed]);
 
   const draft = useMemo<VexoCard>(
     () => ({
@@ -67,13 +64,13 @@ export default function OnboardingPage() {
       title: "",
       bio: "",
       avatarStyle,
-      avatarSeed: seed,
+      avatarSeed,
       avatarGender: gender,
       links: [],
       isPrimary: true,
       updatedAt: new Date().toISOString(),
     }),
-    [displayName, avatarStyle, seed, gender],
+    [displayName, avatarStyle, avatarSeed, gender],
   );
 
   function goNext() {
@@ -115,10 +112,23 @@ export default function OnboardingPage() {
         displayName,
         username,
         avatarStyle,
-        avatarSeed: seed,
+        avatarSeed,
         avatarGender: gender,
         passkeyWallet,
       });
+      try {
+        await sealCardToPasskey({
+          v: 1,
+          wallet: passkeyWallet,
+          username: usernameSlug(username),
+          displayName,
+          avatarStyle,
+          avatarSeed,
+          avatarGender: gender,
+        });
+      } catch {
+        // Card still lives in this browser. Seal is how other devices restore it.
+      }
       router.push("/app/mint");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your card");
@@ -129,7 +139,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-dvh bg-paper p-3 md:p-5">
-      <div className="relative min-h-[calc(100dvh-1.5rem)] overflow-hidden rounded-[28px] border border-ink/10 bg-panel">
+      <div className="relative min-h-[calc(100dvh-1.5rem)] overflow-hidden border-[3px] border-ink bg-panel">
       <SiteDoodle />
       <div className="relative z-10 mx-auto grid min-h-dvh max-w-6xl items-center gap-8 px-6 py-10 lg:grid-cols-2">
         <div className="order-2 lg:order-1">
@@ -140,7 +150,7 @@ export default function OnboardingPage() {
             {steps.map((label, i) => (
               <span
                 key={label}
-                className={`h-1.5 w-10 rounded-full ${
+                className={`h-1.5 w-10 ${
                   i <= step ? "bg-violet" : "bg-violet/20"
                 }`}
               />
@@ -185,7 +195,7 @@ export default function OnboardingPage() {
                 Pick a portrait
               </h1>
               <p className="mt-3 text-sm text-ink/60">
-                This helps DiceBear draw you. You can change it later.
+                Public Nouns portraits. Pick the one that feels like you.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {genders.map((item) => (
@@ -193,10 +203,10 @@ export default function OnboardingPage() {
                     key={item.id}
                     type="button"
                     onClick={() => setGender(item.id)}
-                    className={`rounded-full border px-4 py-2 text-sm ${
+                    className={`border-[3px] border-ink px-4 py-2 text-sm ${
                       gender === item.id
-                        ? "border-violet bg-violet text-white"
-                        : "border-violet/25 bg-white"
+                        ? "bg-violet text-ink"
+                        : "bg-mist"
                     }`}
                   >
                     {item.label}
@@ -204,19 +214,21 @@ export default function OnboardingPage() {
                 ))}
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
-                {portraits.map((style) => (
+                {looks.map((look) => (
                   <button
-                    key={style}
+                    key={look}
                     type="button"
-                    onClick={() => setAvatarStyle(style)}
-                    className={`rounded-3xl bg-mist p-1 ring-2 ${
-                      avatarStyle === style ? "ring-orchid" : "ring-transparent"
+                    onClick={() => setAvatarSeed(look)}
+                    className={`bg-mist p-1 ${
+                      avatarSeed === look
+                        ? "outline outline-[3px] outline-orchid"
+                        : ""
                     }`}
                   >
                     <img
-                      src={dicebearUrl(style, seed, 96, gender)}
-                      alt={style}
-                      className="h-16 w-16 rounded-[20px] bg-white"
+                      src={dicebearUrl("noun", look, 96)}
+                      alt=""
+                      className="h-16 w-16 bg-panel"
                     />
                   </button>
                 ))}
@@ -230,7 +242,7 @@ export default function OnboardingPage() {
                 Your Vexo name
               </h1>
               <p className="mt-3 text-sm text-ink/60">
-                We made one from a mood and a god — Greek, Nile, Norse, and more. Shuffle until it feels like you. Next, Face ID creates the passkey. That key is the wallet and the sign-in. No seed, no database.
+                We made one from a mood and a god — Greek, Nile, Norse, and more. Shuffle until it feels like you. Next, a passkey is created — fingerprint, face, or PIN. That key is the wallet and the sign-in. No seed, no database.
               </p>
               <div className="mt-8 flex gap-2">
                 <label className="flex-1 space-y-1 text-sm">
@@ -243,7 +255,7 @@ export default function OnboardingPage() {
                 </label>
                 <button
                   type="button"
-                  className="mt-6 grid h-12 w-12 place-items-center rounded-2xl border border-violet/25 bg-white"
+                  className="mt-6 grid h-12 w-12 place-items-center border-[3px] border-ink bg-mist"
                   onClick={() =>
                     setUsername(
                       suggestUsername((value) => Boolean(userByUsername(value))),
@@ -267,7 +279,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={() => setStep((n) => n - 1)}
-                className="rounded-full px-5 py-3 text-sm text-ink/60"
+                className="px-5 py-3 text-sm text-ink/60"
               >
                 Back
               </button>
@@ -278,7 +290,7 @@ export default function OnboardingPage() {
               onClick={() => (step === 2 ? finish() : goNext())}
               className="btn btn-fill pressable"
             >
-              {busy ? "Waiting for Face ID…" : step === 2 ? "Create passkey · Face ID" : "Continue"}
+              {busy ? "Waiting for passkey…" : step === 2 ? "Create passkey" : "Continue"}
             </button>
           </div>
         </div>

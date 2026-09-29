@@ -76,7 +76,7 @@ export async function sendEthWithPasskey(input: {
   const url = bundlerUrl();
   if (!url) {
     throw new Error(
-      "Add NEXT_PUBLIC_PIMLICO_API_KEY to broadcast. Face ID signs the UserOp once the bundler is set.",
+      "Add NEXT_PUBLIC_PIMLICO_API_KEY to broadcast. The passkey signs the UserOp once the bundler is set.",
     );
   }
 

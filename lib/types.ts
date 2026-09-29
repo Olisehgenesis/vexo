@@ -8,6 +8,7 @@ export type CardKind =
   | "custom";
 
 export type DiceStyle =
+  | "noun"
   | "lorelei"
   | "adventurer"
   | "notionists"
@@ -78,13 +79,14 @@ export type WalletMint = {
   samsung?: string;
 };
 
-export type PasskeyWallet = {
-  credentialId: string;
-  publicKey?: `0x${string}`;
-  publicKeySpki?: string;
-  address: `0x${string}`;
-  kernelAddress?: `0x${string}`;
-  createdAt: string;
+export type PasskeyCardVault = {
+  v: 1;
+  wallet: PasskeyWallet;
+  username: string;
+  displayName: string;
+  avatarStyle: DiceStyle;
+  avatarSeed: string;
+  avatarGender?: VexoCard["avatarGender"];
 };
 
 export type VexoUser = {

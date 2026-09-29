@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="phone-shell">
       <DoodleField />
       <div className="relative flex min-h-dvh flex-col pb-24">{children}</div>
-      <nav className="absolute inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-[#f7f2e6]/95 px-6 py-3">
+      <nav className="absolute inset-x-0 bottom-0 z-20 border-t-[3px] border-ink bg-panel px-6 py-3">
         <ul className="flex items-center justify-between">
           {tabs.map((tab) => {
             const active =

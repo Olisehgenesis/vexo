@@ -115,10 +115,10 @@ export default function ThreadPage() {
             return (
               <li
                 key={message.id}
-                className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                className={`max-w-[80%] px-3 py-2 text-sm ${
                   mine
-                    ? "ml-auto bg-violet text-white"
-                    : "bg-white text-ink"
+                    ? "ml-auto bg-violet text-ink"
+                    : "border-[3px] border-ink bg-mist text-ink"
                 }`}
               >
                 {plain[message.id] ?? "…"}

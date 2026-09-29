@@ -1,6 +1,12 @@
 import { getAddress, keccak256, type Address, type Hex } from "viem";
 import { createWebAuthnCredential } from "viem/account-abstraction";
-import type { PasskeyWallet } from "@/lib/types";
+import type { PasskeyCardVault, PasskeyWallet } from "@/lib/types";
+import {
+  assertionExtensions,
+  decodeCardVault,
+  encodeCardVault,
+  prfEvalFirst,
+} from "@/lib/passkey-vault";
 
 function fromB64url(value: string) {
   const padded = value.replace(/-/g, "+").replace(/_/g, "/");
@@ -54,6 +60,17 @@ function assertWebAuthn() {
   }
 }
 
+function credentialDescriptor(id: string) {
+  const bytes = fromB64url(id);
+  return {
+    type: "public-key" as const,
+    id: bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength,
+    ) as ArrayBuffer,
+  };
+}
+
 export async function createPasskeyWallet(input: {
   userId: string;
   username: string;
@@ -64,7 +81,6 @@ export async function createPasskeyWallet(input: {
   const credential = await createWebAuthnCredential({
     name: `${input.displayName || input.username} · Vexo`,
     authenticatorSelection: {
-      authenticatorAttachment: "platform",
       residentKey: "required",
       requireResidentKey: true,
       userVerification: "required",
@@ -72,6 +88,10 @@ export async function createPasskeyWallet(input: {
     rp: {
       id: window.location.hostname,
       name: "Vexo",
+    },
+    extensions: {
+      credProps: true,
+      largeBlob: { support: "preferred" },
     },
   });
 
@@ -83,26 +103,24 @@ export async function createPasskeyWallet(input: {
   };
 }
 
-export async function requestPasskeyAssertion(knownIds: string[] = []) {
+export async function requestPasskeyAssertion(
+  knownIds: string[] = [],
+  writeVault?: PasskeyCardVault,
+) {
   assertWebAuthn();
 
   const challenge = crypto.getRandomValues(new Uint8Array(32));
   const allowCredentials = knownIds
     .map((id) => {
       try {
-        const bytes = fromB64url(id);
-        return {
-          type: "public-key" as const,
-          id: bytes.buffer.slice(
-            bytes.byteOffset,
-            bytes.byteOffset + bytes.byteLength,
-          ) as ArrayBuffer,
-        };
+        return credentialDescriptor(id);
       } catch {
         return null;
       }
     })
-    .filter((item): item is { type: "public-key"; id: ArrayBuffer } => Boolean(item));
+    .filter((item): item is ReturnType<typeof credentialDescriptor> => Boolean(item));
+
+  const writeBytes = writeVault ? await encodeCardVault(writeVault) : undefined;
 
   const credential = (await navigator.credentials.get({
     publicKey: {
@@ -111,6 +129,17 @@ export async function requestPasskeyAssertion(knownIds: string[] = []) {
       userVerification: "required",
       timeout: 120_000,
       ...(allowCredentials.length > 0 ? { allowCredentials } : {}),
+      extensions: {
+        prf: { eval: { first: prfEvalFirst() } },
+        largeBlob: writeBytes
+          ? {
+              write: writeBytes.buffer.slice(
+                writeBytes.byteOffset,
+                writeBytes.byteOffset + writeBytes.byteLength,
+              ) as ArrayBuffer,
+            }
+          : { read: true },
+      },
     },
     mediation: "required",
   })) as PublicKeyCredential | null;
@@ -119,5 +148,16 @@ export async function requestPasskeyAssertion(knownIds: string[] = []) {
     throw new Error("No passkey was selected.");
   }
 
-  return { credentialId: credential.id };
+  const ext = assertionExtensions(credential);
+  const prfFirst = ext.prf?.results?.first;
+  let vault: PasskeyCardVault | null = writeVault ?? null;
+  if (!vault && ext.largeBlob?.blob) {
+    vault = await decodeCardVault(ext.largeBlob.blob, prfFirst);
+  }
+
+  return { credentialId: credential.id, vault };
+}
+
+export async function sealCardToPasskey(vault: PasskeyCardVault) {
+  return requestPasskeyAssertion([vault.wallet.credentialId], vault);
 }

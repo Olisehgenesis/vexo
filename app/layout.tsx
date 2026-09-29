@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
-import { Archivo, Figtree, Barlow_Condensed } from "next/font/google";
+import { Pixelify_Sans, Press_Start_2P } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
 
-const body = Figtree({
+const body = Pixelify_Sans({
   variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const display = Archivo({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
-});
-
-const mark = Barlow_Condensed({
+const mark = Press_Start_2P({
   variable: "--font-mark",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${body.variable} ${display.variable} ${mark.variable} h-full antialiased`}
+      className={`${body.variable} ${mark.variable} h-full`}
     >
       <body className="min-h-full">
         <AppProviders>{children}</AppProviders>

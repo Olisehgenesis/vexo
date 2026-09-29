@@ -42,18 +42,10 @@ export function VexoCardFace({
         className="relative min-h-[232px] w-full transition-transform duration-500 [transform-style:preserve-3d]"
         style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
       >
-        <article className="absolute inset-0 overflow-hidden rounded-2xl border-[1.5px] border-ink bg-panel p-5 text-ink shadow-[6px_8px_0_rgba(27,48,34,0.08)] [backface-visibility:hidden]">
-          <svg
-            className="pointer-events-none absolute inset-0 h-full w-full opacity-40"
-            viewBox="0 0 340 220"
-            aria-hidden
-          >
-            <ellipse cx="170" cy="150" rx="120" ry="28" fill="none" stroke="#16341f" strokeWidth="1" />
-            <ellipse cx="170" cy="150" rx="70" ry="16" fill="none" stroke="#16341f" strokeWidth="1" />
-          </svg>
+        <article className="absolute inset-0 overflow-hidden border-[3px] border-ink bg-panel p-5 text-ink shadow-[6px_6px_0_var(--color-violet)] [backface-visibility:hidden]">
           <div className="relative flex items-start justify-between gap-3">
             <div>
-              <p className="font-[family-name:var(--font-mark)] text-lg uppercase tracking-[0.16em] text-violet">
+              <p className="font-[family-name:var(--font-mark)] text-[10px] uppercase leading-relaxed tracking-[0.16em] text-orchid">
                 Vexo
               </p>
               <p className="text-[11px] uppercase tracking-[0.22em] text-ink/50">
@@ -68,7 +60,7 @@ export function VexoCardFace({
                 card.avatarGender ?? "unspecified",
               )}
               alt=""
-              className="h-14 w-14 rounded-full border border-ink/20 bg-mist"
+              className="h-14 w-14 border-[3px] border-ink bg-mist"
             />
           </div>
           <div className="relative mt-8">
@@ -78,7 +70,7 @@ export function VexoCardFace({
             {card.title ? (
               <p className="mt-2 text-sm text-ink/70">{card.title}</p>
             ) : null}
-            <p className="mt-5 font-[family-name:var(--font-mark)] text-base uppercase tracking-wide text-violet">
+            <p className="mt-5 font-[family-name:var(--font-mark)] text-[10px] uppercase leading-relaxed tracking-wide text-lilac">
               vexo.social/{username}
               {!card.isPrimary && `/${card.slug}`}
             </p>
@@ -90,11 +82,11 @@ export function VexoCardFace({
           </div>
         </article>
 
-        <article className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl border-[1.5px] border-ink bg-ink p-5 text-paper [backface-visibility:hidden] [transform:rotateY(180deg)]">
-          <div className="rounded-xl bg-paper p-3">
-            <QRCodeSVG value={url} size={132} fgColor="#16341f" bgColor="#f4efe3" />
+        <article className="absolute inset-0 flex flex-col items-center justify-center gap-3 border-[3px] border-ink bg-ink p-5 text-paper [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <div className="border-[3px] border-paper bg-paper p-3">
+            <QRCodeSVG value={url} size={132} fgColor="#1b1430" bgColor="#fff4dc" />
           </div>
-          <p className="font-[family-name:var(--font-mark)] uppercase tracking-[0.16em]">
+          <p className="font-[family-name:var(--font-mark)] text-[10px] uppercase leading-relaxed tracking-[0.16em]">
             Scan to meet
           </p>
         </article>

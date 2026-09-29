@@ -15,7 +15,7 @@ import {
   saveGoodDollarProof,
   saveSelfProof,
 } from "@/lib/store";
-import { createPasskeyWallet, shortenAddress, spendAddress } from "@/lib/passkey-wallet";
+import { createPasskeyWallet, sealCardToPasskey, shortenAddress, spendAddress } from "@/lib/passkey-wallet";
 import { resolveSmartAccountAddress } from "@/lib/smart-account";
 import { useVexo } from "@/lib/use-vexo";
 
@@ -96,6 +96,23 @@ export default function MintPassPage() {
         /* Kernel address resolves on Send when RPC is reachable. */
       }
       bindPasskeyWallet(next);
+      try {
+        const me = currentUser();
+        const card = me ? primaryCard(me.id) : null;
+        if (me) {
+          await sealCardToPasskey({
+            v: 1,
+            wallet: next,
+            username: me.username,
+            displayName: me.displayName,
+            avatarStyle: card?.avatarStyle ?? "noun",
+            avatarSeed: card?.avatarSeed ?? me.username,
+            avatarGender: card?.avatarGender,
+          });
+        }
+      } catch {
+        /* local card still works */
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not bind passkey");
     } finally {
@@ -198,13 +215,13 @@ export default function MintPassPage() {
         Mint card to wallet
       </h1>
       <p className="mt-3 text-sm leading-6 text-ink/65">
-        This card is a passkey wallet. Face ID signs. There is no seed. The
+        This card is a passkey wallet. The passkey signs. There is no seed. The
         private key stays in Apple, Google, or Samsung. Add the pass to your
         phone wallet, then tap a site or a terminal.
       </p>
 
       {wallet ? (
-        <p className="mt-4 rounded-2xl border border-ink/10 bg-white/70 px-4 py-3 font-mono text-sm">
+        <p className="mt-4 border-[3px] border-ink bg-mist px-4 py-3 font-mono text-sm">
           {spendAddress(wallet)}
         </p>
       ) : (
@@ -214,7 +231,7 @@ export default function MintPassPage() {
           onClick={bindPasskey}
           className="btn btn-fill pressable mt-4 w-full"
         >
-          {busy === "passkey" ? "Waiting for Face ID…" : "Bind passkey wallet"}
+          {busy === "passkey" ? "Waiting for passkey…" : "Bind passkey wallet"}
         </button>
       )}
 
@@ -227,7 +244,7 @@ export default function MintPassPage() {
       </div>
 
       <section className="mt-8 grid gap-3">
-        <article className="rounded-2xl border border-ink/10 bg-white/70 p-5">
+        <article className="border-[3px] border-ink bg-mist p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-[family-name:var(--font-mark)] text-xs uppercase tracking-[0.16em] text-violet">
@@ -266,7 +283,7 @@ export default function MintPassPage() {
           <DisclosureList disclosures={user.humanity?.self?.disclosures} />
         </article>
 
-        <article className="rounded-2xl border border-ink/10 bg-white/70 p-5">
+        <article className="border-[3px] border-ink bg-mist p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-[family-name:var(--font-mark)] text-xs uppercase tracking-[0.16em] text-violet">
@@ -402,7 +419,7 @@ function DisclosureList({
 function StatusPill({ ok, pending }: { ok: boolean; pending?: boolean }) {
   const label = ok ? "Verified" : pending ? "Pending" : "Open";
   return (
-    <span className="shrink-0 rounded-full border border-ink/15 px-2 py-1 text-[10px] uppercase tracking-wide">
+    <span className="shrink-0 border-[3px] border-ink px-2 py-1 text-[10px] uppercase tracking-wide">
       {label}
     </span>
   );

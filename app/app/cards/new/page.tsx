@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { dicebearUrl, DICE_STYLES } from "@/lib/dicebear";
+import { dicebearUrl, nounLooks } from "@/lib/dicebear";
 import { addCard, currentUser } from "@/lib/store";
 import type { CardKind, DiceStyle } from "@/lib/types";
 
@@ -22,8 +22,10 @@ export default function NewCardPage() {
   const [slug, setSlug] = useState("business");
   const [title, setTitle] = useState("");
   const [bio, setBio] = useState("");
-  const [avatarStyle, setAvatarStyle] = useState<DiceStyle>("notionists");
-  const [avatarSeed, setAvatarSeed] = useState(user?.username ?? "vexo");
+  const [avatarStyle] = useState<DiceStyle>("noun");
+  const [avatarSeed, setAvatarSeed] = useState(
+    nounLooks(user?.username ?? "vexo")[0] ?? "vexo",
+  );
 
   if (!user) return null;
 
@@ -57,10 +59,8 @@ export default function NewCardPage() {
                 setKind(item);
                 setSlug(item);
               }}
-              className={`rounded-full border px-3 py-1.5 text-xs capitalize ${
-                kind === item
-                  ? "border-violet bg-violet text-white"
-                  : "border-violet/30 bg-white"
+              className={`border-[3px] border-ink px-3 py-1.5 text-xs capitalize ${
+                kind === item ? "bg-violet text-ink" : "bg-mist"
               }`}
             >
               {item}
@@ -85,16 +85,22 @@ export default function NewCardPage() {
           <textarea required rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
         </label>
         <div className="flex gap-2 overflow-x-auto">
-          {DICE_STYLES.map((style) => (
+          {nounLooks(user.username).map((look) => (
             <button
-              key={style.id}
+              key={look}
               type="button"
-              onClick={() => setAvatarStyle(style.id)}
-              className={`shrink-0 rounded-2xl p-1 ring-2 ${
-                avatarStyle === style.id ? "ring-orchid" : "ring-transparent"
+              onClick={() => setAvatarSeed(look)}
+              className={`shrink-0 p-1 ${
+                avatarSeed === look
+                  ? "outline outline-[3px] outline-orchid"
+                  : ""
               }`}
             >
-              <img src={dicebearUrl(style.id, avatarSeed, 56)} alt="" className="h-12 w-12 rounded-xl" />
+              <img
+                src={dicebearUrl("noun", look, 56)}
+                alt=""
+                className="h-12 w-12"
+              />
             </button>
           ))}
         </div>

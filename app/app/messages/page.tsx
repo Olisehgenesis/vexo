@@ -21,7 +21,7 @@ export default function MessagesIndexPage() {
         Private conversation
       </h1>
       {threads.length === 0 ? (
-        <p className="mt-8 rounded-3xl border border-dashed border-violet/30 bg-white/70 p-5 text-sm leading-6">
+        <p className="mt-8 border-[3px] border-dashed border-ink bg-mist p-5 text-sm leading-6">
           Chat opens from a Proof of Meet, not from a follow. Mint a connection
           first.
         </p>
@@ -36,12 +36,12 @@ export default function MessagesIndexPage() {
               <li key={thread.id}>
                 <Link
                   href={`/app/messages/${thread.id}`}
-                  className="flex items-center gap-3 rounded-3xl bg-white/80 p-4"
+                  className="flex items-center gap-3 border-[3px] border-ink bg-mist p-4"
                 >
                   <img
                     src={dicebearUrl(card.avatarStyle, card.avatarSeed, 64)}
                     alt=""
-                    className="h-11 w-11 rounded-2xl"
+                    className="h-11 w-11"
                   />
                   <div>
                     <p className="font-medium">{peer.displayName}</p>

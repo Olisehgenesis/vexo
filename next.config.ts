@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "api.dicebear.com" },
+      { protocol: "https", hostname: "noun.pics" },
+      { protocol: "https", hostname: "api.cloudnouns.com" },
     ],
   },
 };

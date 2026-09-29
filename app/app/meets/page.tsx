@@ -32,7 +32,7 @@ export default function MeetsPage() {
       </p>
 
       {meets.length === 0 ? (
-        <div className="mt-8 rounded-3xl border border-dashed border-violet/35 bg-white/70 p-5">
+        <div className="mt-8 border-[3px] border-dashed border-ink bg-mist p-5">
           <p className="text-sm leading-6">
             A Proof of Meet is mutual. Open someone&apos;s Vexo card and mint the
             connection — or start with a demo person nearby.
@@ -59,12 +59,12 @@ export default function MeetsPage() {
             if (!peer || !card) return null;
             const thread = threadForMeet(meet.id);
             return (
-              <li key={meet.id} className="rounded-3xl bg-white/80 p-4">
+              <li key={meet.id} className="border-[3px] border-ink bg-mist p-4">
                 <div className="flex items-center gap-3">
                   <img
                     src={dicebearUrl(card.avatarStyle, card.avatarSeed, 72)}
                     alt=""
-                    className="h-12 w-12 rounded-2xl"
+                    className="h-12 w-12"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{peer.displayName}</p>

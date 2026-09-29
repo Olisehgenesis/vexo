@@ -2,11 +2,15 @@ export function BrickMark({ className = "" }: { className?: string }) {
   return (
     <svg
       className={className}
-      viewBox="0 0 48 32"
+      viewBox="0 0 48 24"
       fill="none"
       aria-hidden
     >
-      <path d="M2 18h18v12H2zM20 18h18v12H20zM11 2h18v16H11z" className="doodle-stroke" opacity="1" />
+      <rect x="2" y="8" width="18" height="14" className="doodle-stroke" />
+      <rect x="22" y="8" width="18" height="14" className="doodle-stroke" />
+      <rect x="16" y="2" width="10" height="8" className="doodle-stroke" />
+      <rect x="8" y="12" width="6" height="6" fill="var(--paper)" />
+      <rect x="28" y="12" width="6" height="6" fill="var(--paper)" />
     </svg>
   );
 }

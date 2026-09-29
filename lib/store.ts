@@ -7,6 +7,7 @@ import type {
   DiceStyle,
   EncryptedVault,
   GoodDollarProof,
+  PasskeyCardVault,
   PasskeyWallet,
   SelfProof,
   VexoCard,
@@ -94,7 +95,7 @@ function ensureSeed() {
     bio: "I connect builders across East Africa. If we met, this is the card to keep.",
     location: "Kampala",
     website: "https://ethnile.xyz",
-    avatarStyle: "lorelei",
+    avatarStyle: "noun",
     avatarSeed: "sarah-okello",
     links: [
       { id: "l1", label: "Farcaster", url: "https://warpcast.com/sarah" },
@@ -113,7 +114,7 @@ function ensureSeed() {
     title: "Protocol engineer",
     bio: "Shipping infrastructure. Happy to continue the conversation after we meet.",
     location: "Accra",
-    avatarStyle: "adventurer",
+    avatarStyle: "noun",
     avatarSeed: "brian-mensah",
     links: [{ id: "l1", label: "GitHub", url: "https://github.com" }],
     isPrimary: true,
@@ -197,16 +198,33 @@ export function userByCredentialId(credentialId: string) {
   );
 }
 
-export function activatePasskeySession(credentialId: string) {
+export async function activatePasskeySession(
+  credentialId: string,
+  vault?: PasskeyCardVault | null,
+) {
   const user = userByCredentialId(credentialId);
-  if (!user?.passkeyWallet) {
-    throw new Error(
-      "Face ID found a passkey, but this browser has no card cache. Create the card on this device, or open Vexo on the phone that minted it. We do not keep accounts on a server.",
-    );
+  if (user?.passkeyWallet) {
+    memory = { ...memory, currentUserId: user.id };
+    persist();
+    return user;
   }
-  memory = { ...memory, currentUserId: user.id };
-  persist();
-  return user;
+  if (vault?.wallet.publicKey) {
+    return hydrateFromPasskeyVault(vault);
+  }
+  throw new Error(
+    "Passkey unlocked, but this key has no card sealed on it yet. Create the card once — we store it on the passkey, encrypted, not in a Vexo database.",
+  );
+}
+
+export async function hydrateFromPasskeyVault(vault: PasskeyCardVault) {
+  return completeOnboarding({
+    username: vault.username,
+    displayName: vault.displayName,
+    avatarStyle: vault.avatarStyle,
+    avatarSeed: vault.avatarSeed,
+    avatarGender: vault.avatarGender,
+    passkeyWallet: vault.wallet,
+  });
 }
 
 export function cardsFor(userId: string) {
